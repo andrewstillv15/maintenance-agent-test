@@ -1,3 +1,5 @@
+require_relative "../../lib/app_logger"
+
 module Services
   module Worker
     class RetryHandler
@@ -18,11 +20,11 @@ module Services
 
           if attempt <= MAX_RETRIES
             delay = BACKOFF_BASE**attempt
-            $stdout.write("Retry attempt #{attempt}/#{MAX_RETRIES} for job #{job_id} (waiting #{delay}s): #{e.message}\n")
+            AppLogger.warn("Retry attempt #{attempt}/#{MAX_RETRIES} for job #{job_id} (waiting #{delay}s): #{e.message}")
             sleep(delay)
             retry
           else
-            $stdout.write("Job #{job_id} failed permanently after #{MAX_RETRIES} retries: #{e.message}\n")
+            AppLogger.error("Job #{job_id} failed permanently after #{MAX_RETRIES} retries: #{e.message}")
             mark_failed(job_id, e)
           end
         end
@@ -31,14 +33,14 @@ module Services
       def retries_remaining(job_id)
         used = @retry_counts[job_id] || 0
         remaining = MAX_RETRIES - used
-        $stdout.write("Job #{job_id}: #{remaining} retries remaining\n")
+        AppLogger.info("Job #{job_id}: #{remaining} retries remaining")
         remaining
       end
 
       private
 
       def mark_failed(job_id, error)
-        $stdout.write("Marking job #{job_id} as permanently failed: #{error.class} - #{error.message}\n")
+        AppLogger.error("Marking job #{job_id} as permanently failed: #{error.class} - #{error.message}")
         @retry_counts.delete(job_id)
       end
     end

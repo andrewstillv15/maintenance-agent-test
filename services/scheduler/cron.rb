@@ -1,3 +1,5 @@
+require_relative "../../lib/app_logger"
+
 module Services
   module Scheduler
     class Cron
@@ -7,35 +9,35 @@ module Services
       end
 
       def register(name, schedule, &block)
-        puts "Registering scheduled task: #{name} (#{schedule})"
+        AppLogger.info "Registering scheduled task: #{name} (#{schedule})"
         @jobs[name] = { schedule: schedule, handler: block, last_run: nil }
       end
 
       def start
-        puts "Starting scheduler with #{@jobs.size} registered tasks..."
+        AppLogger.info "Starting scheduler with #{@jobs.size} registered tasks..."
         @running = true
         run_loop
       end
 
       def stop
-        puts "Stopping scheduler..."
+        AppLogger.info "Stopping scheduler..."
         @running = false
       end
 
       def run_now(name)
         job = @jobs[name]
         unless job
-          puts "Unknown task: #{name}"
+          AppLogger.warn "Unknown task: #{name}"
           return
         end
 
-        puts "Running scheduled task: #{name}"
+        AppLogger.info "Running scheduled task: #{name}"
         begin
           job[:handler].call
           job[:last_run] = Time.now
-          puts "Task #{name} completed at #{job[:last_run]}"
+          AppLogger.info "Task #{name} completed at #{job[:last_run]}"
         rescue StandardError => e
-          puts "Task #{name} failed: #{e.message}"
+          AppLogger.error "Task #{name} failed: #{e.message}"
         end
       end
 
@@ -45,7 +47,7 @@ module Services
         while @running
           @jobs.each do |name, job|
             if should_run?(job)
-              puts "Running scheduled task: #{name}"
+              AppLogger.info "Running scheduled task: #{name}"
               run_now(name)
             end
           end

@@ -1,43 +1,42 @@
-require "logger"
 require "net/http"
+require_relative "../../lib/app_logger"
 
 module Services
   module Scheduler
     class HealthCheck
       def initialize(services: [])
         @services = services
-        @logger = Logger.new(STDOUT)
       end
 
       def check_all
-        puts "Running health checks for #{@services.size} services..."
+        AppLogger.info "Running health checks for #{@services.size} services..."
         results = @services.map { |service| check(service) }
 
         healthy = results.count { |r| r[:healthy] }
-        puts "Health check summary: #{healthy}/#{@services.size} services healthy"
+        AppLogger.info "Health check summary: #{healthy}/#{@services.size} services healthy"
 
-        @logger.info("Health check complete: #{healthy}/#{@services.size} healthy")
+        AppLogger.info("Health check complete: #{healthy}/#{@services.size} healthy")
         results
       end
 
       def check(service)
-        puts "Checking health of #{service[:name]}..."
+        AppLogger.info "Checking health of #{service[:name]}..."
         start = Time.now
         status = ping(service[:url])
         duration = ((Time.now - start) * 1000).round(2)
 
         if status == 200
-          puts "#{service[:name]} is healthy (#{duration}ms)"
-          @logger.info("#{service[:name]} healthy - #{duration}ms")
+          AppLogger.info "#{service[:name]} is healthy (#{duration}ms)"
+          AppLogger.info("#{service[:name]} healthy - #{duration}ms")
           { name: service[:name], healthy: true, response_time: duration }
         else
-          puts "#{service[:name]} is unhealthy (status: #{status})"
-          @logger.info("#{service[:name]} unhealthy - status #{status}")
+          AppLogger.warn "#{service[:name]} is unhealthy (status: #{status})"
+          AppLogger.warn("#{service[:name]} unhealthy - status #{status}")
           { name: service[:name], healthy: false, status: status }
         end
       rescue StandardError => e
-        puts "#{service[:name]} health check failed: #{e.message}"
-        @logger.info("#{service[:name]} check error: #{e.message}")
+        AppLogger.error "#{service[:name]} health check failed: #{e.message}"
+        AppLogger.error("#{service[:name]} check error: #{e.message}")
         { name: service[:name], healthy: false, error: e.message }
       end
 

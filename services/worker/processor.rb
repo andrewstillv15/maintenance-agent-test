@@ -1,3 +1,5 @@
+require_relative "../../lib/app_logger"
+
 module Services
   module Worker
     class Processor
@@ -7,20 +9,20 @@ module Services
       end
 
       def start
-        puts "Starting worker for queue: #{@queue_name}"
+        AppLogger.info "Starting worker for queue: #{@queue_name}"
         @running = true
         poll
       end
 
       def stop
-        puts "Shutting down worker for queue: #{@queue_name}"
+        AppLogger.info "Shutting down worker for queue: #{@queue_name}"
         @running = false
       end
 
       def process(job)
-        puts "Processing job: #{job[:id]} (type: #{job[:type]})"
+        AppLogger.info "Processing job: #{job[:id]} (type: #{job[:type]})"
         result = execute(job)
-        puts "Job #{job[:id]} completed with status: #{result[:status]}"
+        AppLogger.info "Job #{job[:id]} completed with status: #{result[:status]}"
         result
       end
 
@@ -28,7 +30,7 @@ module Services
 
       def poll
         while @running
-          puts "Polling queue #{@queue_name} for jobs..."
+          AppLogger.debug "Polling queue #{@queue_name} for jobs..."
           jobs = fetch_jobs
           jobs.each { |job| process(job) }
           sleep 5
@@ -36,21 +38,21 @@ module Services
       end
 
       def fetch_jobs
-        puts "Fetching jobs from #{@queue_name}..."
+        AppLogger.debug "Fetching jobs from #{@queue_name}..."
         []
       end
 
       def execute(job)
-        puts "Executing job #{job[:id]}..."
+        AppLogger.debug "Executing job #{job[:id]}..."
         case job[:type]
         when "email"
-          puts "Processing email job..."
+          AppLogger.debug "Processing email job..."
           { status: "done" }
         when "report"
-          puts "Processing report job..."
+          AppLogger.debug "Processing report job..."
           { status: "done" }
         else
-          puts "Unknown job type: #{job[:type]}"
+          AppLogger.warn "Unknown job type: #{job[:type]}"
           { status: "skipped" }
         end
       end
