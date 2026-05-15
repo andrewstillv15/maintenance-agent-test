@@ -1,35 +1,63 @@
-# Maintenance Agent Test
-
-A sample Ruby application demonstrating various services.
 
 ## Logging Approach
 
-This project currently uses simple `puts` statements and direct `Logger.new(STDOUT)` calls
-for logging throughout the codebase. Each service handles its own logging in whatever way
-the original author preferred:
+This project uses a centralized `AppLogger` module for consistent logging across all services.
+The AppLogger provides structured, timestamped logging with proper log levels.
 
-- **API server/middleware**: Mix of `puts` and `Logger.new(STDOUT)`
-- **Worker**: `puts` and `$stdout.write` for job processing output
-- **Mailer**: `puts` and `Logger.new(STDOUT)` for email operations
-- **Scheduler**: Mix of `puts` and `Logger.new(STDOUT)` in health checks
-- **Importer**: `puts` and `$stderr.puts` for import progress and validation errors
-- **Scripts**: `puts` for progress output
+### Using AppLogger
 
-### Why This Works (For Now)
+All logging should go through the `AppLogger` module, which is available in `lib/app_logger.rb`.
 
-For local development, `puts` gives us quick visibility into what's happening. In production,
-stdout is captured by the process manager, so we still get basic output. It's simple and
-everyone understands it.
+```ruby
+require_relative 'lib/app_logger'
 
-### Known Limitations
+# Log at different severity levels
+AppLogger.debug "Detailed debugging information"
+AppLogger.info "General informational messages"
+AppLogger.warn "Warning messages for potentially problematic situations"
+AppLogger.error "Error messages for failures and exceptions"
+AppLogger.fatal "Critical errors that may cause application failure"
+```
 
-- No log levels (everything is effectively "info" or just raw output)
-- No structured formatting (timestamp, severity, caller info)
-- No way to filter noisy output in production
-- Inconsistent formatting across services
-- `$stderr.puts` used ad-hoc for errors instead of a proper error-level log
+### Available Log Levels
 
-### Note
+- **DEBUG**: Detailed information for diagnosing problems (verbose)
+- **INFO**: General informational messages about application progress
+- **WARN**: Warning messages indicating potential issues
+- **ERROR**: Error messages for failures that need attention
+- **FATAL**: Critical errors that may cause the application to terminate
 
-There is a standardized logger in `lib/app_logger.rb` that was set up a while back, but
-it hasn't been adopted by any of the services yet.
+### Configuration
+
+Log level can be controlled via the `LOG_LEVEL` environment variable:
+
+```bash
+# Set to DEBUG for verbose output
+export LOG_LEVEL=DEBUG
+
+# Set to INFO for standard output (default)
+export LOG_LEVEL=INFO
+
+# Set to WARN to see only warnings and errors
+export LOG_LEVEL=WARN
+
+# Set to ERROR to see only errors
+export LOG_LEVEL=ERROR
+```
+
+### Log Format
+
+All log messages are formatted consistently:
+
+```
+[2024-01-15 14:23:45] INFO Starting API server on port 3000...
+[2024-01-15 14:23:45] DEBUG Loading configuration...
+[2024-01-15 14:23:46] ERROR Failed to connect to database: connection refused
+```
+
+### Benefits
+
+- **Consistency**: All services log in the same format
+- **Filtering**: Control verbosity via LOG_LEVEL environment variable
+- **Structured**: Timestamps and severity levels on every message
+- **Maintainability**: Single point of configuration for logging behavior
